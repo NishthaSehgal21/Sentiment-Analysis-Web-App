@@ -1,18 +1,10 @@
-"""Sentiment analysis engine built on VADER (NLTK)."""
+"""Sentiment analysis engine using VADER."""
 
-import os
 import re
 import threading
 
-import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-
-# Store NLTK data inside the project/runtime directory
-NLTK_DATA_DIR = os.path.join(os.path.dirname(__file__), "nltk_data")
-os.makedirs(NLTK_DATA_DIR, exist_ok=True)
-
-nltk.data.path.insert(0, NLTK_DATA_DIR)
 
 _LOCK = threading.Lock()
 _ANALYZER = None
@@ -20,50 +12,36 @@ _ANALYZER = None
 MAX_TEXT_LENGTH = 5000
 
 
-def _ensure_lexicon() -> None:
-    """Ensure the VADER lexicon is available."""
-    try:
-        nltk.data.find("sentiment/vader_lexicon.zip")
-        return
-    except LookupError:
-        pass
-
-    try:
-        nltk.data.find("sentiment/vader_lexicon")
-        return
-    except LookupError:
-        pass
-
-    # Download only if it is not already available.
-    nltk.download(
-        "vader_lexicon",
-        download_dir=NLTK_DATA_DIR,
-        quiet=True,
-    )
-
-
 def get_analyzer() -> SentimentIntensityAnalyzer:
+    """Create and return a reusable VADER analyzer."""
     global _ANALYZER
 
     with _LOCK:
         if _ANALYZER is None:
-            _ensure_lexicon()
             _ANALYZER = SentimentIntensityAnalyzer()
 
         return _ANALYZER
 
 
 def classify_compound(compound: float) -> str:
+    """Classify sentiment using VADER compound score."""
     if compound >= 0.05:
         return "Positive"
+
     if compound <= -0.05:
         return "Negative"
+
     return "Neutral"
 
 
 def text_statistics(text: str) -> dict:
+    """Calculate basic statistics for the input text."""
     words = re.findall(r"\b\w+\b", text)
-    sentences = [s for s in re.split(r"[.!?]+", text) if s.strip()]
+    sentences = [
+        sentence
+        for sentence in re.split(r"[.!?]+", text)
+        if sentence.strip()
+    ]
 
     return {
         "words": len(words),
@@ -71,7 +49,7 @@ def text_statistics(text: str) -> dict:
         "characters_no_spaces": len(text.replace(" ", "")),
         "sentences": max(len(sentences), 1) if text.strip() else 0,
         "avg_word_length": (
-            round(sum(len(w) for w in words) / len(words), 2)
+            round(sum(len(word) for word in words) / len(words), 2)
             if words
             else 0
         ),
@@ -79,6 +57,8 @@ def text_statistics(text: str) -> dict:
 
 
 def analyze_sentiment(text: str) -> dict:
+    """Analyze the sentiment of the supplied text."""
+
     if not isinstance(text, str):
         raise ValueError("Input text must be a string.")
 
@@ -92,7 +72,9 @@ def analyze_sentiment(text: str) -> dict:
             f"Text exceeds the maximum of {MAX_TEXT_LENGTH} characters."
         )
 
-    scores = get_analyzer().polarity_scores(cleaned)
+    analyzer = get_analyzer()
+
+    scores = analyzer.polarity_scores(cleaned)
 
     compound = round(scores["compound"], 4)
     sentiment = classify_compound(compound)
