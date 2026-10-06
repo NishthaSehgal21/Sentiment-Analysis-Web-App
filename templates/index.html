@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sentix — Sentiment Analysis Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="#home" class="logo">Sentix<span class="logo-dot">.</span></a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#analyzer">Analyzer</a></li>
+      <li><a href="#analytics">Analytics</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#analyzer" class="btn btn-small btn-primary nav-cta">Analyze Now</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="home">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="hero-orb orb-1" aria-hidden="true"></div>
+  <div class="hero-orb orb-2" aria-hidden="true"></div>
+  <div class="hero-content">
+    <p class="eyebrow reveal">NLP · SENTIMENT INTELLIGENCE</p>
+    <h1 class="reveal">Understand the Emotion<br>Behind Every Word</h1>
+    <p class="subtitle reveal">Sentix uses VADER sentiment analysis and NLP techniques to decode the emotional signal inside any text — reviews, feedback, or social media.</p>
+    <div class="hero-cta reveal">
+      <a href="#analyzer" class="btn btn-primary">Analyze Text</a>
+      <a href="#analytics" class="btn btn-ghost">Explore Analytics</a>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="analyzer">
+  <h2 class="section-title">Sentiment <span class="grad">Analyzer</span></h2>
+  <p class="section-sub">Paste text, run the pipeline, and get a transparent, score-backed result.</p>
+
+  <div class="dashboard">
+    <div class="card input-card">
+      <label for="textInput" class="card-label">Input Text</label>
+      <textarea id="textInput" maxlength="5000" placeholder="e.g. This product exceeded my expectations and I absolutely love it." aria-label="Text to analyze"></textarea>
+      <div class="input-meta">
+        <span id="charCount">0 characters</span>
+        <span id="wordCount">0 words</span>
+      </div>
+      <div class="input-actions">
+        <button id="clearBtn" class="btn btn-ghost">Clear</button>
+        <button id="analyzeBtn" class="btn btn-primary">Analyze</button>
+      </div>
+      <p class="error-msg" id="errorMsg" role="alert" hidden></p>
+
+      <div class="pipeline" id="pipeline" hidden aria-live="polite">
+        <p class="pipeline-step" data-step>Text Processing</p>
+        <p class="pipeline-step" data-step>Tokenizing</p>
+        <p class="pipeline-step" data-step>Analyzing</p>
+        <p class="pipeline-step" data-step>Generating Sentiment</p>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+      <div class="examples">
+        <p class="card-label">Quick Examples</p>
+        <div class="example-chips">
+          <button class="chip" data-example="This product exceeded my expectations and I absolutely love it.">Positive</button>
+          <button class="chip" data-example="The experience was disappointing and the service was extremely slow.">Negative</button>
+          <button class="chip" data-example="The package arrived today and contains the requested items.">Neutral</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card result-card" id="resultCard">
+      <p class="card-label">Result</p>
+      <div id="resultEmpty" class="result-empty">Run an analysis to see the sentiment breakdown.</div>
+      <div id="resultBody" hidden>
+        <div class="sentiment-badge" id="sentimentBadge">—</div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 120" class="gauge" aria-hidden="true">
+            <path d="M 20 105 A 85 85 0 0 1 180 105" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M 20 105 A 85 85 0 0 1 180 105" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="267" stroke-dashoffset="267"/>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#f43f5e"/><stop offset="50%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#34d399"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-score"><span id="scoreValue">0.00</span><small>compound score</small></div>
+        </div>
+        <p class="gauge-scale">Negative ← Neutral → Positive</p>
+        <p class="intensity">Intensity: <strong id="intensityValue">—</strong></p>
+        <p class="interpretation" id="interpretation"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="analytics">
+  <h2 class="section-title">Live <span class="grad">Analytics</span></h2>
+  <p class="section-sub">Score composition and text statistics from your latest analysis.</p>
+  <div class="analytics-grid">
+    <div class="card chart-card">
+      <p class="card-label">VADER Score Composition</p>
+      <canvas id="vaderChart" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <p class="card-label">Text Statistics</p>
+      <canvas id="statsChart" height="220"></canvas>
+    </div>
+    <div class="card stats-card">
+      <p class="card-label">Metrics</p>
+      <ul class="stats-list" id="statsList">
+        <li><span>Words</span><strong id="mWords">—</strong></li>
+        <li><span>Characters</span><strong id="mChars">—</strong></li>
+        <li><span>Sentences</span><strong id="mSentences">—</strong></li>
+        <li><span>Avg word length</span><strong id="mAvg">—</strong></li>
+        <li><span>Intensity</span><strong id="mIntensity">—</strong></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="history">
+  <h2 class="section-title">Recent <span class="grad">Analyses</span></h2>
+  <div class="card">
+    <div class="history-head">
+      <p class="card-label">History</p>
+      <button id="clearHistory" class="btn btn-ghost btn-small">Clear History</button>
+    </div>
+    <div id="historyList" class="history-list"><p class="muted">No analyses yet.</p></div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <h2 class="section-title">How It <span class="grad">Works</span></h2>
+  <p class="section-sub">A transparent, five-stage NLP pipeline.</p>
+  <div class="steps">
+    <div class="step card"><span class="step-num">01</span><h3>Enter Text</h3><p>Paste a sentence, review, or social post into the analyzer.</p></div>
+    <div class="step card"><span class="step-num">02</span><h3>Backend Processing</h3><p>Flask validates and cleans the input on the server.</p></div>
+    <div class="step card"><span class="step-num">03</span><h3>NLP Scoring</h3><p>VADER scores the text for positive, negative, neutral, and compound polarity.</p></div>
+    <div class="step card"><span class="step-num">04</span><h3>Classification</h3><p>The compound score maps to Positive, Negative, or Neutral using standard thresholds.</p></div>
+    <div class="step card"><span class="step-num">05</span><h3>Visualization</h3><p>Scores, intensity, and text statistics render as charts and a gauge.</p></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <h3 class="logo">Sentix<span class="logo-dot">.</span></h3>
+      <p class="muted">AI-powered sentiment intelligence.</p>
+      <p class="muted small">Internship Project — Advanced Sentiment Analysis Web Application</p>
+    </div>
+    <div>
+      <p class="card-label">Technologies</p>
+      <p class="muted">Python • Flask • NLP • HTML • CSS • JavaScript</p>
+    </div>
+    <div>
+      <p class="card-label">Author</p>
+      <p class="muted">Author: [YOUR NAME]</p>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
